@@ -1,7 +1,6 @@
 package syncmap
 
 import (
-	// "fmt"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -22,7 +21,7 @@ import (
 //
 // A Map must not be copied after first use.
 type Map struct {
-	counter *int64
+	counter int32
 	mu      sync.Mutex
 
 	// read contains the portion of the map's contents that are safe for
@@ -138,11 +137,6 @@ func (m *Map) Store(key, value interface{}) {
 	}
 
 	m.mu.Lock()
-	if m.counter == nil {
-		v := new(int64)
-		*v = 0
-		m.counter = v
-	}
 	read, _ = m.read.Load().(readOnly)
 	if e, ok := read.m[key]; ok {
 		if e.unexpungeLocked() {
@@ -154,7 +148,7 @@ func (m *Map) Store(key, value interface{}) {
 	} else if e, ok := m.dirty[key]; ok {
 		e.storeLocked(&value)
 	} else {
-		atomic.AddInt64(m.counter, 1)
+		atomic.AddInt32(&m.counter, 1)
 		if !read.amended {
 			// We're adding the first new key to the dirty map.
 			// Make sure it is allocated and mark the read-only map as incomplete.
@@ -281,7 +275,7 @@ func (m *Map) Delete(key interface{}) (res bool) {
 		e, ok = read.m[key]
 		if !ok && read.amended {
 			delete(m.dirty, key)
-			atomic.AddInt64(m.counter, -1)
+			atomic.AddInt32(&m.counter, -1)
 			res = true
 		}
 		m.mu.Unlock()
@@ -289,12 +283,12 @@ func (m *Map) Delete(key interface{}) (res bool) {
 	if ok {
 		e.delete()
 		res = true
-		atomic.AddInt64(m.counter, -1)
+		atomic.AddInt32(&m.counter, -1)
 	}
 	return res
 }
 
-func (m *Map) Length() *int64 {
+func (m *Map) Length() int32 {
 	return m.counter
 }
 
