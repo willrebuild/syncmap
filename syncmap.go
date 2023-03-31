@@ -280,7 +280,7 @@ func (m *Map) LoadAndDelete(key interface{}) (value interface{}, loaded bool) {
 		if !ok && read.amended {
 			e, ok = m.dirty[key]
 			delete(m.dirty, key)
-			atomic.AddInt32(&m.counter, -1)
+			//atomic.AddInt32(&m.counter, -1)
 			// Regardless of whether the entry was present, record a miss: this key
 			// will take the slow path until the dirty map is promoted to the read
 			// map.
