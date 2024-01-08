@@ -289,8 +289,11 @@ func (m *Map) LoadAndDelete(key interface{}) (value interface{}, loaded bool) {
 		m.mu.Unlock()
 	}
 	if ok {
-		atomic.AddInt32(&m.counter, -1)
-		return e.delete()
+		value, loaded = e.delete()
+		if loaded {
+			atomic.AddInt32(&m.counter, -1)
+		}
+		return value, loaded
 	}
 	return nil, false
 }
