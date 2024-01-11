@@ -304,7 +304,14 @@ func (m *Map) Delete(key interface{}) {
 }
 
 func (m *Map) Length() int32 {
-	return m.counter
+	//return m.counter
+	length := int32(0)
+	m.Range(func(key, value interface{}) bool {
+		length++
+		return true
+	})
+
+	return length
 }
 
 func (e *entry) delete() (value interface{}, ok bool) {
